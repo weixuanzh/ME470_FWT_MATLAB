@@ -1,12 +1,12 @@
 % reference trajectory parameters
-pitch_freq = 2;
-pitch_amp = pi/6;
+pitch_freq = 1;
+pitch_amp = pi/4;
 pitch_offset = 0;
-roll_freq = 1;
-roll_amp = pi/6;
+roll_freq = sqrt(3);
+roll_amp = pi/4;
 roll_offset = 0;
-z_center_freq = 5;
-z_center_amp = 50;
+z_center_freq = sqrt(5);
+z_center_amp = 100;
 z_center_offset = 400;
 
 % simulation parameters
@@ -24,7 +24,10 @@ roll_ref = roll_amp .* sin(2 * pi * roll_freq * time) + roll_offset;
 z_ref = z_center_amp .* sin(2 * pi * z_center_freq * time) + z_center_offset;
 nsteps = length(time);
 d_history = zeros(3, nsteps);
+yaw_history = zeros(1, nsteps);
 
+% convert (yaw, pitch, roll) (ZYX euler angle) to ZYZ euler angle (alpha, beta, -alpha)
+% yaw angle is dependent on provided pitch and roll angles
 alpha_ref = zeros(nsteps, 1);
 beta_ref = zeros(nsteps, 1);
 
@@ -33,10 +36,16 @@ for i = 1:nsteps
     s1 = sin(pitch_ref(i));
     c2 = cos(roll_ref(i));
     s2 = sin(roll_ref(i));
-    rotm = [1, 0, 0; 0, c2, -s2; 0, s2, c2] * [c1, 0, -s1; 0, 1, 0; s1, 0, c1];
+    % rotation matrix for pitch and roll
+    % pitch first, roll second, in moving frame
+    rotm = [c1, 0, -s1; 0, 1, 0; s1, 0, c1] * [1, 0, 0; 0, c2, -s2; 0, s2, c2];
+    % solve for yaw angle
+    th_yaw = atan((rotm(1, 2) - rotm(2, 1)) / (rotm(1, 1) + rotm(2, 2)));
+    rotm = [cos(th_yaw), -sin(th_yaw), 0; sin(th_yaw), cos(th_yaw), 0; 0, 0, 1] * rotm;
     eulZYZ = rotm2eul(rotm, 'ZYZ');
     alpha_ref(i) = eulZYZ(1);
     beta_ref(i) = eulZYZ(2);
+    yaw_history(i) = th_yaw;
 end
 
 % solve IK at all time steps
@@ -75,7 +84,7 @@ for i = 1:nsteps
     th3_history(i) = th3;
 end
 
-%% Plot pin angles
+%% Plot pin angles and platform yaw
 figure
 hold on
 plot(time, th1_history * 180 / pi - 90)
@@ -84,6 +93,10 @@ plot(time, th3_history * 180 / pi - 90)
 xlabel("time (s)")
 ylabel("pin angle from vertical (degree)")
 legend(["\theta_1", "\theta_2", "\theta_3"])
+figure
+plot(time, yaw_history * 180 / pi)
+xlabel("time (s)")
+ylabel("platform yaw (degree)")
 
 %% animate platform motion
 animation_length = 4;
