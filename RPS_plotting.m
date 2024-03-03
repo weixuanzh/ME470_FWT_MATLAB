@@ -17,6 +17,7 @@ b1 = p1 + [-L1 * cos(theta1); 0; L1 * sin(theta1)];
 b2 = p2 + [L2 * cos(theta2) * 0.5; -L2 * cos(theta2) * sqrt(3) / 2; L2 * sin(theta2)];
 b3 = p3 + [L3 * cos(theta3) * 0.5; L3 * cos(theta3) * sqrt(3) / 2; L3 * sin(theta3)];
 z_center = (b1(3) + b2(3) + b3(3))/3;
+norm(b2 - b3)
 
 % plot base plate
 plot3([p1(1), p2(1); p2(1), p3(1); p3(1), p1(1)], [p1(2), p2(2); p2(2), p3(2); p3(2), p1(2)], [p1(3), p2(3); p2(3), p3(3); p3(3), p1(3)] ,'b')
@@ -46,6 +47,9 @@ if view_point == 1
 end
 if view_point == 2
     view(45, 45)
+end
+if view_point == 3
+    view(0, 90)
 end
 hold off
 end

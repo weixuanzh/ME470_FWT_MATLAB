@@ -1,21 +1,21 @@
 % reference trajectory parameters
 pitch_freq = 1;
-pitch_amp = pi/4;
+pitch_amp = 0.610865;
 pitch_offset = 0;
-roll_freq = sqrt(3);
-roll_amp = pi/4;
+roll_freq = 1;
+roll_amp = 0.610865;
 roll_offset = 0;
 z_center_freq = sqrt(5);
-z_center_amp = 100;
-z_center_offset = 400;
+z_center_amp = 0;
+z_center_offset = 203.835;
 
 % simulation parameters
-delta_t = 0.01;
-terminal_t = 5;
+delta_t = 0.005;
+terminal_t = 2;
 
 % platform parameters
-pin_distance = 173;
-ball_distance = 173;
+pin_distance = 83.2358;
+ball_distance = 86.614;
 
 % generate reference trajectory
 time = 0:delta_t:terminal_t;
@@ -45,6 +45,7 @@ for i = 1:nsteps
     eulZYZ = rotm2eul(rotm, 'ZYZ');
     alpha_ref(i) = eulZYZ(1);
     beta_ref(i) = eulZYZ(2);
+    eulZYZ
     yaw_history(i) = th_yaw;
 end
 
@@ -77,7 +78,7 @@ th3_history = zeros(nsteps, 1);
 % prepare the plot
 
 for i = 1:nsteps
-    [th1, th2, th3] = RPS_forward_kinematics(d_history(1, i), d_history(2, i),d_history(2, i), ball_distance, pin_distance, prev_guess);
+    [th1, th2, th3] = RPS_forward_kinematics(d_history(1, i), d_history(2, i),d_history(3, i), ball_distance, pin_distance, prev_guess);
     prev_guess = [th1; th2; th3];
     th1_history(i) = th1;
     th2_history(i) = th2;
@@ -104,6 +105,7 @@ t_step_plot = animation_length / nsteps;
 z_history = zeros(nsteps, 1);
 % 1 is for recording the motion video, 0 otherwise
 record = 0;
+vp = 2;
 
 motion = figure;
 tic
@@ -117,7 +119,6 @@ for i = 1:nsteps
     pause(t_step_plot - toc)
     tic
     % view point: 0 for side view, 1 for front view, 2 for 45 degree view
-    vp = 2;
     z_temp = RPS_plotting(d_history(1, i), d_history(2, i),d_history(3, i), th1_history(i), th2_history(i), th3_history(i), ball_distance, pin_distance, vp);
     z_history(i) = z_temp;
     drawnow
