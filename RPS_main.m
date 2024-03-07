@@ -1,11 +1,11 @@
 % reference trajectory parameters
 pitch_freq = 1;
-pitch_amp = 0.610865;
+pitch_amp = 20 * pi / 180;
 pitch_offset = 0;
-roll_freq = 1;
-roll_amp = 0.610865;
+roll_freq = 3;
+roll_amp = 20 * pi / 180;
 roll_offset = 0;
-z_center_freq = sqrt(5);
+z_center_freq = 1;
 z_center_amp = 0;
 z_center_offset = 203.835;
 
@@ -19,7 +19,7 @@ ball_distance = 86.614;
 
 % generate reference trajectory
 time = 0:delta_t:terminal_t;
-pitch_ref = pitch_amp .* sin(2 * pi * pitch_freq * time) + pitch_offset;
+pitch_ref = pitch_amp .* sin(2 * pi * pitch_freq * time - pi/4) + pitch_offset;
 roll_ref = roll_amp .* sin(2 * pi * roll_freq * time) + roll_offset;
 z_ref = z_center_amp .* sin(2 * pi * z_center_freq * time) + z_center_offset;
 nsteps = length(time);
@@ -45,7 +45,6 @@ for i = 1:nsteps
     eulZYZ = rotm2eul(rotm, 'ZYZ');
     alpha_ref(i) = eulZYZ(1);
     beta_ref(i) = eulZYZ(2);
-    eulZYZ
     yaw_history(i) = th_yaw;
 end
 
@@ -79,7 +78,7 @@ th3_history = zeros(nsteps, 1);
 
 for i = 1:nsteps
     [th1, th2, th3] = RPS_forward_kinematics(d_history(1, i), d_history(2, i),d_history(3, i), ball_distance, pin_distance, prev_guess);
-    prev_guess = [th1; th2; th3];
+    %prev_guess = [th1; th2; th3];
     th1_history(i) = th1;
     th2_history(i) = th2;
     th3_history(i) = th3;
@@ -103,9 +102,26 @@ ylabel("platform yaw (degree)")
 animation_length = 4;
 t_step_plot = animation_length / nsteps;
 z_history = zeros(nsteps, 1);
+x_history = zeros(nsteps, 1);
+y_history = zeros(nsteps, 1);
+xp1_history = zeros(nsteps, 1);
+yp1_history = zeros(nsteps, 1);
+zp1_history = zeros(nsteps, 1);
+
+xp2_history = zeros(nsteps, 1);
+yp2_history = zeros(nsteps, 1);
+zp2_history = zeros(nsteps, 1);
+
+xp3_history = zeros(nsteps, 1);
+yp3_history = zeros(nsteps, 1);
+zp3_history = zeros(nsteps, 1);
+
 % 1 is for recording the motion video, 0 otherwise
 record = 0;
-vp = 2;
+% view point: 0 for side view, 1 for front view, 2 for 45 degree view, 3
+% for top view
+
+vp = 3;
 
 motion = figure;
 tic
@@ -119,8 +135,21 @@ for i = 1:nsteps
     pause(t_step_plot - toc)
     tic
     % view point: 0 for side view, 1 for front view, 2 for 45 degree view
-    z_temp = RPS_plotting(d_history(1, i), d_history(2, i),d_history(3, i), th1_history(i), th2_history(i), th3_history(i), ball_distance, pin_distance, vp);
+    [x_temp, y_temp, z_temp, xp1, yp1, zp1, xp2, yp2, zp2, xp3, yp3, zp3] = RPS_plotting(d_history(1, i), d_history(2, i),d_history(3, i), th1_history(i), th2_history(i), th3_history(i), ball_distance, pin_distance, vp);
     z_history(i) = z_temp;
+    x_history(i) = x_temp;
+    y_history(i) = y_temp;
+    xp1_history(i) = xp1;
+    yp1_history(i) = yp1;
+    zp1_history(i) = zp1;
+    
+    xp2_history(i) = xp2;
+    yp2_history(i) = yp2;
+    zp2_history(i) = zp2;
+    
+    xp3_history(i) = xp3;
+    yp3_history(i) = yp3;
+    zp3_history(i) = zp3;
     drawnow
     if record
         frame = getframe(gcf);
@@ -130,8 +159,24 @@ end
 if record
     close(myVideo)
 end
-% plot z center
+hold on
+plot3(xp1_history, yp1_history, zp1_history)
+plot3(xp2_history, yp2_history, zp2_history)
+plot3(xp3_history, yp3_history, zp3_history)
+
+
+% plot center
 figure
-plot(time, z_history)
+plot(time, x_history)
 xlabel("time (s)")
-ylabel("center height")
+ylabel("center position (mm)")
+
+%% Plot ball joint trajectory
+figure
+hold on
+plot3(xp1_history, yp1_history, zp1_history)
+plot3(xp2_history, yp2_history, zp2_history)
+plot3(xp3_history, yp3_history, zp3_history)
+plot3(x_history, y_history, z_history)
+
+legend(["joint 1", "joint 2", "joint3", "center"])
