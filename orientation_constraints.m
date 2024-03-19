@@ -97,4 +97,70 @@ xlabel("pitch angle (degree)")
 ylabel("roll angles (degree)")
 zlabel("actuator angle from vertical (degree)")
 title("Center height at Z=" + num2str(z_fixed) + "mm")
-   
+
+%% Uncontrollable motion: see possible xy translation and yaw when a certain range of pitch and roll are applied
+pitch_amp = 20 * pi / 180;
+roll_amp = 20 * pi / 180;
+step = pi / 50;
+pitch_vals = -pitch_amp:step:pitch_amp;
+roll_vals = -roll_amp:step:roll_amp;
+% platform parameters
+g = 83.2358;
+h = 86.614;
+% 4 plots: x, y, yaw as a function of specified dof; all possible (x, y)
+figure
+hold on 
+subplot(2, 2, 1)
+for p = pitch_vals
+    for r = roll_vals
+        % calculate required yaw given pitch and roll using rotation matrix
+        c1 = cos(p);
+        s1 = sin(p);
+        c2 = cos(r);
+        s2 = sin(r);
+        % rotation matrix for pitch and roll
+        % pitch first, roll second, in moving frame
+        rotm = [c1, 0, -s1; 0, 1, 0; s1, 0, c1] * [1, 0, 0; 0, c2, -s2; 0, s2, c2];
+        y = atan((rotm(1, 2) - rotm(2, 1)) / (rotm(1, 1) + rotm(2, 2)));
+        % convert roll, pitch, yaw into ZYZ euler angles
+        rotm = [cos(y), -sin(y), 0; sin(y), cos(y), 0; 0, 0, 1] * rotm;
+        eulZYZ = rotm2eul(rotm, 'ZYZ');
+        alpha = eulZYZ(1);
+        beta = eulZYZ(2);
+        % calculation xy translation
+        px = -0.5 * h * (1 - cos(beta)) * cos(2 * alpha);
+        py = 0.5 * h * (1 - cos(beta)) * sin(2 * alpha);
+        subplot(2, 2, 1)
+        hold on
+        plot3(p, r, px, 'o')
+        subplot(2, 2, 2)
+        hold on
+        plot3(p, r, py, 'o')
+        subplot(2, 2, 3)
+        hold on
+        plot3(p, r, y, 'o')
+        subplot(2, 2, 4)
+        hold on
+        plot(px, py, 'o')
+    end
+end
+% label the plots
+subplot(2, 2, 1)
+title("x-center")
+xlabel("pitch")
+ylabel("roll")
+zlabel("x-center")
+subplot(2, 2, 2)
+title("y-center")
+xlabel("pitch")
+ylabel("roll")
+zlabel("y-center")
+subplot(2, 2, 3)
+title("yaw")
+xlabel("pitch")
+ylabel("roll")
+zlabel("yaw")
+subplot(2, 2, 4)
+title("Center positions")
+xlabel("x-center")
+ylabel("y-center")
