@@ -51,9 +51,14 @@ plot3([p2(1), b2(1)], [p2(2), b2(2)], [p2(3), b2(3)], 'r')
 plot3([p3(1), b3(1)], [p3(2), b3(2)], [p3(3), b3(3)], 'r')
 % plot center
 plot3((b1(1) + b2(1) + b3(1))/3, (b1(2) + b2(2) + b3(2))/3, z_center, 'o')
-xlim([-200, 200])
-ylim([-200, 200])
-zlim([-50, 500])
+xlim([-100, 150])
+ylim([-125, 125])
+zlim([-50, 300])
+% plot heading (to observe yaw)
+plot3([x_center, b1(1)], [y_center, b1(2)], [z_center, b1(3)], 'g')
+
+
+
 % side view
 if view_point == 0
     view(0, 0)

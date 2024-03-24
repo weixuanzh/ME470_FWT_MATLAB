@@ -101,23 +101,30 @@ title("Center height at Z=" + num2str(z_fixed) + "mm")
 %% Uncontrollable motion: see possible xy translation and yaw when a certain range of pitch and roll are applied
 pitch_amp = 20 * pi / 180;
 roll_amp = 20 * pi / 180;
-step = pi / 50;
-pitch_vals = -pitch_amp:step:pitch_amp;
-roll_vals = -roll_amp:step:roll_amp;
+step = pi / 500;
+pitch_nsteps = ceil(pitch_amp / step);
+roll_nsteps = ceil(roll_amp / step);
+pitch_vals = 0:pitch_nsteps;
+roll_vals = 0:roll_nsteps;
 % platform parameters
 g = 83.2358;
 h = 86.614;
 % 4 plots: x, y, yaw as a function of specified dof; all possible (x, y)
-figure
-hold on 
-subplot(2, 2, 1)
+% figure
+% hold on 
+% subplot(2, 3, 1)
+% store the resulting uncontrollable yaw and distance
+yaw_matrix = zeros(pitch_nsteps, roll_nsteps);
+dist_matrix = zeros(pitch_nsteps, roll_nsteps);
+x_matrix = zeros(pitch_nsteps, roll_nsteps);
+y_matrix = zeros(pitch_nsteps, roll_nsteps);
 for p = pitch_vals
     for r = roll_vals
         % calculate required yaw given pitch and roll using rotation matrix
-        c1 = cos(p);
-        s1 = sin(p);
-        c2 = cos(r);
-        s2 = sin(r);
+        c1 = cos(p * step);
+        s1 = sin(p * step);
+        c2 = cos(r * step);
+        s2 = sin(r * step);
         % rotation matrix for pitch and roll
         % pitch first, roll second, in moving frame
         rotm = [c1, 0, -s1; 0, 1, 0; s1, 0, c1] * [1, 0, 0; 0, c2, -s2; 0, s2, c2];
@@ -130,37 +137,136 @@ for p = pitch_vals
         % calculation xy translation
         px = -0.5 * h * (1 - cos(beta)) * cos(2 * alpha);
         py = 0.5 * h * (1 - cos(beta)) * sin(2 * alpha);
-        subplot(2, 2, 1)
-        hold on
-        plot3(p, r, px, 'o')
-        subplot(2, 2, 2)
-        hold on
-        plot3(p, r, py, 'o')
-        subplot(2, 2, 3)
-        hold on
-        plot3(p, r, y, 'o')
-        subplot(2, 2, 4)
-        hold on
-        plot(px, py, 'o')
+        
+        yaw_matrix(pitch_nsteps - (p) + 1, r + 1) = abs(y) * 180 / pi;
+        dist_matrix(pitch_nsteps - (p) + 1, r + 1) = sqrt(px^2 + py^2);
+        x_matrix(pitch_nsteps - (p) + 1, r + 1) = abs(px);
+        y_matrix(pitch_nsteps - (p) + 1, r + 1) = abs(py);
+%         subplot(2, 3, 1)
+%         hold on
+%         plot3(p, r, px, 'o')
+%         subplot(2, 3, 2)
+%         hold on
+%         plot3(p, r, py, 'o')
+%         subplot(2, 3, 3)
+%         hold on
+%         plot3(p, r, y, 'o')
+%         subplot(2, 3, 4)
+%         hold on
+%         plot(px, py, 'o')
+%         subplot(2, 3, 5)
+%         hold on
+%         plot3(p, r, sqrt(px^2 + py^2), 'o')
     end
 end
 % label the plots
-subplot(2, 2, 1)
-title("x-center")
-xlabel("pitch")
-ylabel("roll")
-zlabel("x-center")
-subplot(2, 2, 2)
-title("y-center")
-xlabel("pitch")
-ylabel("roll")
-zlabel("y-center")
-subplot(2, 2, 3)
-title("yaw")
-xlabel("pitch")
-ylabel("roll")
-zlabel("yaw")
-subplot(2, 2, 4)
-title("Center positions")
-xlabel("x-center")
-ylabel("y-center")
+% subplot(2, 3, 1)
+% title("x-center")
+% xlabel("pitch")
+% ylabel("roll")
+% zlabel("x-center")
+% subplot(2, 3, 2)
+% title("y-center")
+% xlabel("pitch")
+% ylabel("roll")
+% zlabel("y-center")
+% subplot(2, 3, 3)
+% title("yaw")
+% xlabel("pitch")
+% ylabel("roll")
+% zlabel("yaw")
+% subplot(2, 3, 4)
+% title("Center positions")
+% xlabel("x-center")
+% ylabel("y-center")
+% subplot(2, 3, 5)
+% title("Center offset distance from origin")
+% xlabel("pitch")
+% ylabel("roll")
+% zlabel("Offset Distance")
+
+% heatmap yaw and dist
+img_temp = imagesc(yaw_matrix);
+colormap(hsv(512))
+colormap turbo
+tmp = colorbar;
+tmp.Label.String = 'Platform Yaw (deg)';
+
+% rescale and label axis
+xticklocs = [0 10 20 30 40 50];
+xticks(xticklocs);
+yticklocs = 0:5:60;
+yticks(yticklocs);
+myfac     = 1 * step * 180 / pi;  % this would be your 12.5578
+xticklabels(cellstr(num2str(xticklocs'*myfac)));
+xlabel("Platform Roll (deg)")
+yticklabels(cellstr(num2str(yticklocs'*myfac)));
+ylabel("Platform Pitch (deg)")
+% reverse the axis
+% get the handle to the parent axes
+hAxs = get(img_temp,'Parent');
+% reverse the order of the y-axis tick labels
+yAxisTickLabels = get(hAxs, 'YTickLabel');
+set(hAxs,'YTickLabel',flipud(yAxisTickLabels));
+title("Yaw vs. Commanded Orientations")
+
+
+figure
+img_temp = imagesc(dist_matrix);
+colormap(hsv(512))
+colormap turbo
+tmp = colorbar;
+tmp.Label.String = 'Center Offset (mm)';
+xticks(xticklocs);
+xticklabels(cellstr(num2str(xticklocs'*myfac)));
+xlabel("Platform Roll (deg)")
+yticks(yticklocs);
+yticklabels(cellstr(num2str(yticklocs'*myfac)));
+ylabel("Platform Pitch (deg)")
+% reverse the axis
+% get the handle to the parent axes
+hAxs = get(img_temp,'Parent');
+% reverse the order of the y-axis tick labels
+yAxisTickLabels = get(hAxs, 'YTickLabel');
+set(hAxs,'YTickLabel',flipud(yAxisTickLabels));
+title("Center Offset vs. Commanded Orientations")
+
+figure
+img_temp = imagesc(x_matrix);
+colormap(hsv(512))
+colormap turbo
+tmp = colorbar;
+tmp.Label.String = '|x Offset| (mm)';
+xticks(xticklocs);
+xticklabels(cellstr(num2str(xticklocs'*myfac)));
+xlabel("Platform Roll (deg)")
+yticks(yticklocs);
+yticklabels(cellstr(num2str(yticklocs'*myfac)));
+ylabel("Platform Pitch (deg)")
+% reverse the axis
+% get the handle to the parent axes
+hAxs = get(img_temp,'Parent');
+% reverse the order of the y-axis tick labels
+yAxisTickLabels = get(hAxs, 'YTickLabel');
+set(hAxs,'YTickLabel',flipud(yAxisTickLabels));
+title("x Offset vs. Commanded Orientations")
+
+figure
+img_temp = imagesc(y_matrix);
+colormap(hsv(512))
+colormap turbo
+tmp = colorbar;
+tmp.Label.String = '|y Offset| (mm)';
+xticks(xticklocs);
+xticklabels(cellstr(num2str(xticklocs'*myfac)));
+xlabel("Platform Roll (deg)")
+yticks(yticklocs);
+yticklabels(cellstr(num2str(yticklocs'*myfac)));
+ylabel("Platform Pitch (deg)")
+% reverse the axis
+% get the handle to the parent axes
+hAxs = get(img_temp,'Parent');
+% reverse the order of the y-axis tick labels
+yAxisTickLabels = get(hAxs, 'YTickLabel');
+set(hAxs,'YTickLabel',flipud(yAxisTickLabels));
+title("y Offset vs. Commanded Orientations")

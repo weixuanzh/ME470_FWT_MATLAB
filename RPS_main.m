@@ -2,7 +2,7 @@
 pitch_freq = 1;
 pitch_amp = 20 * pi / 180;
 pitch_offset = 0;
-roll_freq = 3;
+roll_freq = sqrt(3);
 roll_amp = 20 * pi / 180;
 roll_offset = 0;
 z_center_freq = 1;
@@ -117,7 +117,7 @@ yp3_history = zeros(nsteps, 1);
 zp3_history = zeros(nsteps, 1);
 
 % 1 is for recording the motion video, 0 otherwise
-record = 0;
+record = 1;
 % view point: 0 for side view, 1 for front view, 2 for 45 degree view, 3
 % for top view
 
@@ -150,6 +150,14 @@ for i = 1:nsteps
     xp3_history(i) = xp3;
     yp3_history(i) = yp3;
     zp3_history(i) = zp3;
+    
+    hold on
+    plot3(xp1_history(1:i), yp1_history(1:i), zp1_history(1:i))
+    plot3(xp2_history(1:i), yp2_history(1:i), zp2_history(1:i))
+    plot3(xp3_history(1:i), yp3_history(1:i), zp3_history(1:i))
+    plot3(x_history(1:i), y_history(1:i), z_history(1:i))
+    
+    hold off
     drawnow
     if record
         frame = getframe(gcf);
@@ -159,11 +167,6 @@ end
 if record
     close(myVideo)
 end
-hold on
-plot3(xp1_history, yp1_history, zp1_history)
-plot3(xp2_history, yp2_history, zp2_history)
-plot3(xp3_history, yp3_history, zp3_history)
-
 
 % plot center
 figure
